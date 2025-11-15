@@ -185,11 +185,13 @@ def main(argv=None) -> None:
         log_file = f"rcw-{prefix}.log"
 
     if args.background:
+        pid = os.getpid()
         print(f"Background mode enabled for prefix: {prefix}")
         print(f"Listening on: https://{prefix}.requestcatcher.com/")
         if log_file:
             print(f"Logging all requests to: {log_file}")
             print(f"View logs with: tail -f {log_file}")
+        print(f"Process PID: {pid}  (stop with: kill {pid})")
         print()
 
     try:

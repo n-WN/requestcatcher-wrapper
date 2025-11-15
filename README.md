@@ -77,7 +77,7 @@ rcw --match user_id
 rcw --background --prefix mytest --log-file mytest.log
 ```
 
-前台只会输出一次关键信息（监听地址 + 日志文件路径等），所有请求详情都会写入 `mytest.log`，可以用 `tail -f mytest.log` 实时查看，适合放在后台长期运行。
+前台只会输出一次关键信息（监听地址 + 日志文件路径 + 进程 PID），所有请求详情都会写入 `mytest.log`，可以用 `tail -f mytest.log` 实时查看，停止时直接 `kill <PID>` 即可，适合放在后台长期运行。
 
 ## 开发经验 & 设计思路
 
