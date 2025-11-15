@@ -71,6 +71,14 @@ rcw --match user_id
 
 会在终端输出中对所有包含 `user_id` 的位置（路径、头、body 等）做红色高亮，便于在大量请求里快速定位关键信息。匹配大小写不敏感。
 
+后台运行并写入日志（推荐配合 `&` 使用）：
+
+```bash
+rcw --background --prefix mytest --log-file mytest.log
+```
+
+前台只会输出一次关键信息（监听地址 + 日志文件路径等），所有请求详情都会写入 `mytest.log`，可以用 `tail -f mytest.log` 实时查看，适合放在后台长期运行。
+
 ## 开发经验 & 设计思路
 
 - requestcatcher 的实现是通过 WebSocket 将新请求广播给所有连接到 `/init-client` 的客户端，而不是提供传统的 HTTP 拉取接口；因此 CLI 直接连 `wss://<prefix>.requestcatcher.com/init-client`，只要连接不断就能实时收到数据。

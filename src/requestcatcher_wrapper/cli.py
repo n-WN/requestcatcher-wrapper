@@ -21,8 +21,8 @@ def _supports_color() -> bool:
     return sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
 
 
-def _highlight_text(text: str, needle: Optional[str], enable_color: bool) -> str:
-    if not needle or not enable_color:
+def _highlight_text(text: str, needle: Optional[str]) -> str:
+    if not needle or not _supports_color():
         return text
 
     pattern = re.escape(needle)
@@ -32,7 +32,7 @@ def _highlight_text(text: str, needle: Optional[str], enable_color: bool) -> str
     return regex.sub(lambda m: f"{start}{m.group(0)}{end}", text)
 
 
-def format_request(req: Dict[str, Any], highlight: Optional[str] = None) -> str:
+def format_request(req: Dict[str, Any]) -> str:
     time_str = req.get("time") or ""
     try:
         if time_str:
@@ -72,36 +72,68 @@ def format_request(req: Dict[str, Any], highlight: Optional[str] = None) -> str:
         parts.append("Body:")
         parts.append(body)
 
-    formatted = "\n".join(parts)
-    return _highlight_text(formatted, highlight, _supports_color())
+    return "\n".join(parts)
 
 
-async def watch_catcher(prefix: str, highlight: Optional[str] = None) -> None:
+async def watch_catcher(
+    prefix: str,
+    highlight: Optional[str] = None,
+    log_file: Optional[str] = None,
+    quiet: bool = False,
+) -> None:
     url = f"wss://{prefix}.requestcatcher.com/init-client"
-    print(f"Listening on https://{prefix}.requestcatcher.com/")
-    print(f"Connecting to {url} for live requests...\n")
+
+    log_fp = None
+    if log_file:
+        log_fp = open(log_file, "a", encoding="utf-8")
+
+    def _stdout(line: str) -> None:
+        if not quiet:
+            print(line)
+
+    def _log(line: str) -> None:
+        if log_fp:
+            log_fp.write(line + "\n")
+            log_fp.flush()
+
+    def _both(line: str) -> None:
+        _stdout(line)
+        _log(line)
+
+    _both(f"Listening on https://{prefix}.requestcatcher.com/")
+    _both(f"Connecting to {url} for live requests...\n")
 
     while True:
         try:
             async with websockets.connect(url) as ws:
-                print("Connected. Waiting for requests...\n")
+                _both("Connected. Waiting for requests...\n")
                 async for message in ws:
                     try:
                         data = json.loads(message)
                     except json.JSONDecodeError:
-                        print(f"[raw] {message}")
+                        _both(f"[raw] {message}")
                         continue
 
-                    print("=" * 80)
-                    print(format_request(data, highlight=highlight))
-                    print("=" * 80 + "\n")
+                    plain = format_request(data)
+                    block = "=" * 80 + "\n" + plain + "\n" + "=" * 80 + "\n"
+
+                    highlighted = _highlight_text(block, highlight)
+                    _stdout(highlighted)
+                    _log(block.rstrip("\n"))
         except (KeyboardInterrupt, asyncio.CancelledError):
-            print("\nInterrupted, exiting.")
-            return
+            _stdout("\nInterrupted, exiting.")
+            _log("Interrupted, exiting.")
+            break
         except Exception as exc:
-            print(f"Connection error: {exc!r}", file=sys.stderr)
-            print("Reconnecting in 3 seconds...\n", file=sys.stderr)
+            msg = f"Connection error: {exc!r}"
+            _stdout(msg)
+            _log(msg)
+            retry = "Reconnecting in 3 seconds...\n"
+            _stdout(retry)
+            _log(retry.strip())
             await asyncio.sleep(3)
+    if log_fp:
+        log_fp.close()
 
 
 def parse_args(argv=None) -> argparse.Namespace:
@@ -125,13 +157,49 @@ def parse_args(argv=None) -> argparse.Namespace:
         "-m",
         help="Highlight occurrences of this text in the output (case-insensitive).",
     )
+    parser.add_argument(
+        "--background",
+        "-b",
+        action="store_true",
+        help=(
+            "Background-friendly mode: only print URL and log path; "
+            "all request details are written to a log file."
+        ),
+    )
+    parser.add_argument(
+        "--log-file",
+        help=(
+            "Log file path when using --background. "
+            "Default: ./rcw-<prefix>.log"
+        ),
+    )
     return parser.parse_args(argv)
 
 
 def main(argv=None) -> None:
     args = parse_args(argv)
     prefix = args.prefix or generate_prefix(args.length)
+
+    log_file: Optional[str] = args.log_file
+    if args.background and not log_file:
+        log_file = f"rcw-{prefix}.log"
+
+    if args.background:
+        print(f"Background mode enabled for prefix: {prefix}")
+        print(f"Listening on: https://{prefix}.requestcatcher.com/")
+        if log_file:
+            print(f"Logging all requests to: {log_file}")
+            print(f"View logs with: tail -f {log_file}")
+        print()
+
     try:
-        asyncio.run(watch_catcher(prefix, highlight=args.match))
+        asyncio.run(
+            watch_catcher(
+                prefix,
+                highlight=args.match,
+                log_file=log_file,
+                quiet=args.background,
+            )
+        )
     except KeyboardInterrupt:
         print("\nExiting.")
