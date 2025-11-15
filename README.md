@@ -59,6 +59,14 @@ rcw -p mytest
 rcw --length 12
 ```
 
+高亮匹配的文本（可选）：
+
+```bash
+rcw --match user_id
+```
+
+会在终端输出中对所有包含 `user_id` 的位置（路径、头、body 等）做红色高亮，便于在大量请求里快速定位关键信息。匹配大小写不敏感。
+
 ## 开发经验 & 设计思路
 
 - requestcatcher 的实现是通过 WebSocket 将新请求广播给所有连接到 `/init-client` 的客户端，而不是提供传统的 HTTP 拉取接口；因此 CLI 直接连 `wss://<prefix>.requestcatcher.com/init-client`，只要连接不断就能实时收到数据。
