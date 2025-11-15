@@ -1,4 +1,4 @@
-# requestCatcherWarper
+# RequestCatcher Wrapper
 
 一个简单的 CLI，用来包装 [requestcatcher.com](https://requestcatcher.com/) 并更可靠地观测回调请求（避免浏览器后台标签页不再刷新的问题）。
 
@@ -51,4 +51,3 @@ python rcw.py --length 12
 - 浏览器标签在后台时可能减弱 WebSocket 活跃度或节流定时器，所以前端页面放后台可能出现“不再实时更新”的体验；用常驻的 CLI 连接则可以绕过浏览器的节流机制，更稳定。
 - 为了方便调试，CLI 默认生成随机前缀，避免和浏览器里已经开的旧房间冲突；如果需要和浏览器页面共同观测，则在 CLI 中用 `--prefix` 指定同一个前缀，浏览器和 CLI 会看到完全相同的请求流。
 - 输出上优先打印请求的时间、方法、路径、来源 IP 和 Content-Length，并附带头和 body；body 过长时会截断，适合在终端中直接查看 webhook 请求内容。
-
