@@ -4,6 +4,10 @@
 
 https://github.com/n-WN/requestcatcher-wrapper
 
+示例运行界面：
+
+![CLI demo](./assets/rcw-demo.png)
+
 ## 安装方式
 
 使用 uv 安装（推荐）：
