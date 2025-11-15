@@ -4,18 +4,32 @@
 
 https://github.com/n-WN/requestcatcher-wrapper
 
-## 安装依赖
+## 安装方式
+
+使用 uv 安装（推荐）：
 
 ```bash
-pip install -r requirements.txt
+uv pip install requestcatcher-wrapper
 ```
 
-## 使用方式
+或作为本地包安装（开发模式）：
+
+```bash
+uv pip install -e .
+```
+
+也可以直接使用 pip：
+
+```bash
+pip install requestcatcher-wrapper
+```
+
+## 使用方式（命令行）
 
 默认使用随机前缀：
 
 ```bash
-python rcw.py
+rcw
 ```
 
 输出中会显示类似：
@@ -30,19 +44,19 @@ Connecting to wss://abcd1234.requestcatcher.com/init-client for live requests...
 指定固定前缀：
 
 ```bash
-python rcw.py --prefix mytest
+rcw --prefix mytest
 ```
 
 或者：
 
 ```bash
-python rcw.py -p mytest
+rcw -p mytest
 ```
 
 随机前缀长度可调（默认 8）：
 
 ```bash
-python rcw.py --length 12
+rcw --length 12
 ```
 
 ## 开发经验 & 设计思路

@@ -1,0 +1,24 @@
+[project]
+name = "requestcatcher-wrapper"
+version = "0.1.0"
+description = "CLI wrapper for requestcatcher.com to reliably watch incoming HTTP/webhook requests."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "websockets>=12.0",
+]
+authors = [
+    { name = "n-WN" },
+]
+license = { text = "MIT" }
+
+[project.urls]
+Homepage = "https://github.com/n-WN/requestcatcher-wrapper"
+
+[project.scripts]
+rcw = "requestcatcher_wrapper.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
