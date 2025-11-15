@@ -1,6 +1,8 @@
 # RequestCatcher Wrapper
 
-一个简单的 CLI，用来包装 [requestcatcher.com](https://requestcatcher.com/) 并更可靠地观测回调请求（避免浏览器后台标签页不再刷新的问题）。
+一个简单的 CLI，用来包装 [requestcatcher.com](https://requestcatcher.com/) 并更可靠地观测回调请求（避免浏览器后台标签页不再刷新的问题）。仓库地址：
+
+https://github.com/n-WN/requestcatcher-wrapper
 
 ## 安装依赖
 
