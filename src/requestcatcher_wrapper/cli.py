@@ -214,7 +214,7 @@ def main(argv=None) -> None:
         cmd = [
             sys.executable,
             "-m",
-            "requestcatcher_wrapper.cli",
+            "requestcatcher_wrapper",
             "--worker",
             "--prefix",
             prefix,
