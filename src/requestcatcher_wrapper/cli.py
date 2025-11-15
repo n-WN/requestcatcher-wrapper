@@ -5,6 +5,7 @@ import os
 import random
 import re
 import string
+import subprocess
 import sys
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -173,6 +174,11 @@ def parse_args(argv=None) -> argparse.Namespace:
             "Default: ./rcw-<prefix>.log"
         ),
     )
+    parser.add_argument(
+        "--worker",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
     return parser.parse_args(argv)
 
 
@@ -181,18 +187,62 @@ def main(argv=None) -> None:
     prefix = args.prefix or generate_prefix(args.length)
 
     log_file: Optional[str] = args.log_file
-    if args.background and not log_file:
-        log_file = f"rcw-{prefix}.log"
 
+    # Internal worker: actually runs the watcher in the foreground and logs to file,
+    # without spawning further children.
+    if args.worker:
+        if args.background and not log_file:
+            log_file = f"rcw-{prefix}.log"
+        try:
+            asyncio.run(
+                watch_catcher(
+                    prefix,
+                    highlight=args.match,
+                    log_file=log_file,
+                    quiet=True,
+                )
+            )
+        except KeyboardInterrupt:
+            print("\nExiting.")
+        return
+
+    # User-facing background mode: spawn a detached worker process and exit quickly.
     if args.background:
-        pid = os.getpid()
-        print(f"Background mode enabled for prefix: {prefix}")
+        if not log_file:
+            log_file = f"rcw-{prefix}.log"
+
+        cmd = [
+            sys.executable,
+            "-m",
+            "requestcatcher_wrapper.cli",
+            "--worker",
+            "--prefix",
+            prefix,
+        ]
+        # length is irrelevant once prefix is chosen, no need to pass.
+        if args.match:
+            cmd += ["--match", args.match]
+        if log_file:
+            cmd += ["--log-file", log_file]
+
+        popen_kwargs = {
+            "stdin": subprocess.DEVNULL,
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+            "close_fds": True,
+        }
+        if hasattr(os, "setsid"):
+            popen_kwargs["preexec_fn"] = os.setsid  # type: ignore[arg-type]
+
+        proc = subprocess.Popen(cmd, **popen_kwargs)
+
+        print(f"Background watcher started for prefix: {prefix}")
         print(f"Listening on: https://{prefix}.requestcatcher.com/")
         if log_file:
             print(f"Logging all requests to: {log_file}")
             print(f"View logs with: tail -f {log_file}")
-        print(f"Process PID: {pid}  (stop with: kill {pid})")
-        print()
+        print(f"Process PID: {proc.pid}  (stop with: kill {proc.pid})")
+        return
 
     try:
         asyncio.run(
